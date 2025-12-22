@@ -99,6 +99,31 @@ class NoteObject  {
 
 	update(){
 		// ここにアニメーションをついか noteの表示をする
+		const now = this.conductor.getCurrentTime();
+		const len = this.config.lengthToBar + this.config.noteHeight/2;
+		const advanceTime = this.config.advanceTime;
+		const velocity =  len/advanceTime; //pixel per second
+
+		const diff = now - this.noteData.time - advanceTime;
+		//const diff = this.noteData.time - 
+		const x = -0.5*this.config.noteHeight + diff*velocity;  // barHeight分オッセットしてう
+
+		const text = this.noteData.text;
+
+		const ctx = this.canvas.getContext("2d");
+
+		
+		ctx.font = 'bold 48px sans-serif';
+
+		// 3. 塗りつぶしの色を設定
+		ctx.fillStyle = '#ff0055'; // 鮮やかなピンク
+
+
+		// 4. 文字を描画する
+		// ctx.fillText(文字列, X座標, Y座標, [最大幅(省略可)]);
+		ctx.fillText(text, x, 1/2*this.canvas.width);
+
+
 		
 	};
 }
@@ -192,7 +217,7 @@ class NoteManager {
 
 			// 4. ★ここに来た時点で「スポーン確定」！
 			// オブジェクトを作って activeNotes に入れる
-			const newNote = new NoteObject(this.canvas, this.config,this.audioctx,this.nextSpawnIndex, this.scoreData[this.nextSpawnIndex],this.noteResults[this.nextSpawnIndex]);
+			const newNote = new NoteObject(this.canvas, this.audioctx,this.config,this.nextSpawnIndex, this.scoreData[this.nextSpawnIndex],this.noteResults[this.nextSpawnIndex]);
 			this.activeNotes.push(newNote);
 			console.log(`notePushed: ${now}`);
 
@@ -284,6 +309,7 @@ export class ScoreDrawer {
 		this.config.noteWidth = this.laneWidth*0.8;
 		this.config.barHeight = this.canvas.height*0.05; // これでいいのか？
 		this.config.lengthToBar = this.canvas.height*0.8; // これでいいのか？上から判定ラインまでの長さ
+		this.config.noteHeight = this.canvas.height*0.1;
 		this.config.numberOfLanes = this.numberOfLanes;
 
 		this.config.numberOfLanes =  this.scoreData.info.numberOfLanes;
