@@ -1,0 +1,15 @@
+ 
+{
+	"info": {
+		"numberOfLanes": 1,
+		"title": "テストあんけーと"
+		},
+	"notes": [
+			{"time": 5000, "text": "私は天麻派", "lane": 0},
+			{"time": 10000, "text": "私は天派", "lane": 0},
+			{"time": 15000, "text": "私は麻派", "lane": 0},
+			{"time": 20000, "text": "私は派", "lane": 0},
+			{"time": 25000, "text": "私は天", "lane": 0},
+			{"time": 25000, "text": "私は麻", "lane": 0}
+		]	
+}
