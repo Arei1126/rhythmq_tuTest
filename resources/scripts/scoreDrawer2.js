@@ -41,7 +41,7 @@ class JudgeSystem {
         // activeNotesの中から、「そのレーン」にいて、「まだ生きてる（判定されてない）」
         // 一番古い（配列の最初の方にある）やつを探す
         const targetNote = this.noteManager.activeNotes.find(note => 
-            note.lane === laneIndex && !note.isHit
+            note.noteData.lane === laneIndex && !note.isHit
         );
 
         // もし対象がいなければ（空打ち）、ここで終了
@@ -52,7 +52,7 @@ class JudgeSystem {
 
         // 2. 判定ロジック（Calculate）
         // 入力時間と、ノーツの理想時間のズレを計算
-        const diff = Math.abs(inputTime - targetNote.targetTime);
+        const diff = Math.abs(inputTime - targetNote.noteData.time);
 
         // 判定基準（定数とかで定義しておくと吉）
         let judgeResult = null;
@@ -85,7 +85,7 @@ class NoteObject  {
 		this.config = config;
 		this.audioctx = audioctx;
 		this.noteData = noteData;
-		this.noteReuslt = noteResult;
+		this.noteResult = noteResult;
 		this.isDead = false;
 
 	    	this.conductor = this.config.conductor;
@@ -93,7 +93,7 @@ class NoteObject  {
 
 	onHit(judgeResult){
 		this.noteResult.judge = judgeResult;
-		this.noteReuslt.answer = YES;
+		this.noteResult.answer = YES;
 		this.isDead = true;
 	};
 
@@ -207,7 +207,7 @@ class NoteManager {
 		if(this.activeNotes){
 			this.activeNotes = this.activeNotes.filter(note => {
 				note.update();
-				if (note.noteData.time > this.conductor.getCurrentTime() + this.config.threshods[2]){
+				if(now > note.noteData.time + this.config.threshods[2]){
 					note.isDead = true;
 					console.log(`Killed: ${now}`);
 				}
