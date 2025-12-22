@@ -1,3 +1,80 @@
+"use strict";
+const PINK = "#ff0055";
+let debugLog = null;
+
+function drawCenteredText(ctx, text, x, y, color = '#000', font = '16px sans-serif') {
+    // 1. 現在の描画状態（色や配置設定など）を保存する
+    // これにより、この関数内での変更が外部に影響しないようにする
+    ctx.save();
+
+    // 2. 引数で受け取ったスタイルを適用
+    ctx.fillStyle = color;
+    ctx.font = font;
+
+    // 3. テキストの配置基準を中心(Center/Middle)に設定
+    // 横方向の中心合わせ
+    ctx.textAlign = 'center';
+    // 縦方向の中心合わせ
+    ctx.textBaseline = 'middle';
+
+    // 4. 文字を描画する
+    // 設定により、(x, y) が文字の重心になる
+    ctx.fillText(text, x, y);
+
+    // 5. 描画状態を保存した時点(1)に戻す
+    // textAlignなどをデフォルトに戻す手間が省ける
+    ctx.restore();
+}
+
+function drawCenteredRect(ctx, x, y, width, height, isFill = true) {
+    // 1. 中心座標から左上の描画開始位置を計算する
+    // 幅と高さの半分を引くことで、中心を合わせる
+    const drawX = x - (width / 2);
+    const drawY = y - (height / 2);
+
+    // 2. 描画パスを開始する (設定変更の影響を防ぐため)
+    ctx.beginPath();
+
+    // 3. モードに応じて描画を実行する
+    if (isFill) {
+        // 塗りつぶし描画
+        ctx.fillRect(drawX, drawY, width, height);
+    } else {
+        // 線画描画
+        ctx.strokeRect(drawX, drawY, width, height);
+    }
+}
+
+function drawCenteredRoundRect(ctx, x, y, width, height, strokeColor = "white", fillColor = PINK, blurColor = "white", isFill = true) {
+	ctx.save();
+    // 1. 中心座標から左上の描画開始位置を計算する
+    // 幅と高さの半分を引くことで、中心を合わせる
+    const drawX = x - (width / 2);
+    const drawY = y - (height / 2);
+
+	ctx.shadowBlur = 20;
+	ctx.shadowColor = blurColor;
+	ctx.fillStyle = fillColor;
+	ctx.strokeStyle = strokeColor;
+
+
+    // 2. 描画パスを開始する (設定変更の影響を防ぐため)
+    ctx.beginPath();
+
+	ctx.roundRect(drawX,drawY,width,height,10);
+    // 3. モードに応じて描画を実行する
+    if (isFill) {
+        // 塗りつぶし描画
+	    ctx.fill();
+
+    } 
+        // 線画描画
+	    ctx.stroke();
+    
+	ctx.restore();
+}
+
+
 class Conductor {
     constructor(audioCtx) {
         this.audioCtx = audioCtx;
@@ -64,6 +141,8 @@ class JudgeSystem {
 
         // 3. 入力処理（Apply） 
 	    // アンケート結果もここ
+	    // 空打ちじゃなければ、アンケート結果に入れていい。
+	
         if (judgeResult) {
             // 判定成立！ノーツに結果を伝える
             targetNote.onHit(judgeResult);
@@ -71,9 +150,12 @@ class JudgeSystem {
             // ついでにスコア加算とかもここで呼ぶ
             // scoreManager.addScore(judgeResult);
             
-            console.log(`判定: ${judgeResult} (ズレ: ${diff.toFixed(3)}秒)`);
+            console.log(`判定: ${judgeResult} (ズレ: ${diff.toFixed(3)}秒) GOOD:1 BAD:0 MISS:-1`);
+		debugLog.innerText = `判定: ${judgeResult} (ズレ: ${diff.toFixed(3)}秒) GOOD:1 BAD:0 MISS:-1`;
+
         }else{
 		console.log(`ミス!: ${judgeResult} (ズレ: ${diff.toFixed(3)}秒)`); 
+		debugLog.innerText = `ミス!: ${judgeResult} (ズレ: ${diff.toFixed(3)}秒)`;
 	}
     }
 }
@@ -101,27 +183,32 @@ class NoteObject  {
 		// ここにアニメーションをついか noteの表示をする
 		const now = this.conductor.getCurrentTime();
 		const len = this.config.lengthToBar + this.config.noteHeight/2;
-		const advanceTime = this.config.advanceTime;
+		const advanceTime = this.config.timeAdvance;
 		const velocity =  len/advanceTime; //pixel per second
 
-		const diff = now - this.noteData.time - advanceTime;
+		const diff = now - (this.noteData.time - advanceTime);
 		//const diff = this.noteData.time - 
-		const x = -0.5*this.config.noteHeight + diff*velocity;  // barHeight分オッセットしてう
+		const y = -0.5*this.config.noteHeight + diff*velocity;  // barHeight分オッセットしてう
 
 		const text = this.noteData.text;
 
 		const ctx = this.canvas.getContext("2d");
 
 		
-		ctx.font = 'bold 48px sans-serif';
+		const fontSize = this.config.noteWidth / (text.length*1.5);
+		ctx.font = `${fontSize}px sans-serif`;
 
 		// 3. 塗りつぶしの色を設定
 		ctx.fillStyle = '#ff0055'; // 鮮やかなピンク
+		
+		const x = this.canvas.width/(this.config.numberOfLanes+1) * (this.noteData.lane + 1)
+		//drawCenteredRect(ctx,x , y, this.config.noteWidth, this.config.noteHeight);
+		drawCenteredRoundRect(ctx,x , y, this.config.noteWidth, this.config.noteHeight,"white", PINK,PINK,true);
 
-
+		drawCenteredText(ctx,text,x,y,"white", ctx.font);
 		// 4. 文字を描画する
 		// ctx.fillText(文字列, X座標, Y座標, [最大幅(省略可)]);
-		ctx.fillText(text, x, 1/2*this.canvas.width);
+		//ctx.fillText(text,,y);
 
 
 		
@@ -157,6 +244,10 @@ class Lane {
 	    	this.conductor = this.config.conductor;
 	}
 
+	update(){
+		
+	}
+
 
 }
 
@@ -179,6 +270,16 @@ class Hbar {
 		this.effect = new HbarEffect(canvas,audioctx,config);
 
 	    	this.conductor = this.config.conductor;
+	}
+	update(){
+		const ctx = this.canvas.getContext("2d");
+		ctx.save();
+		ctx.fillStyle = "yellow";
+
+		ctx.shadowBlur = 20;
+		ctx.shadowColor = "yellow";
+		drawCenteredRect(ctx, 1/2*this.canvas.width, this.config.lengthToBar, this.canvas.width,this.config.barHeight,true);
+		ctx.restore();
 	}
 }
 
@@ -232,7 +333,7 @@ class NoteManager {
 		if(this.activeNotes){
 			this.activeNotes = this.activeNotes.filter(note => {
 				note.update();
-				if(now > note.noteData.time + this.config.threshods[2]){
+				if(now > note.noteData.time + this.config.threshods[2]*5){
 					note.isDead = true;
 					console.log(`Killed: ${now}`);
 				}
@@ -258,9 +359,8 @@ class NoteManager {
  * @property {} scoreData
  */
 
-const WIDTH = 320;
-const HEIGHT = 540;
-const JUDGE_HEIGHT = 500;
+const WIDTH = 800;
+const HEIGHT = 1600;
 
 /*
 const WIDTH = 1080;
@@ -269,7 +369,7 @@ const HEIGHT = 3240;
 const SLIDER_HEIGHT = 3240/5
 const Config = {
 		"timeAdvance": 2.5,
-		"threshods": [0.05,0.1,0.15], // good, bad, input, +-である
+		"threshods": [0.05,0.15,0.45], // good, bad, input, +-である[0.05,0.1,0.15]
 	}
 
 const NA = -1;
@@ -278,7 +378,7 @@ const NO = 0
 
 const GOOD = 1
 const BAD = 0
-
+const MISS = -1;
 
 
 export class ScoreDrawer {
@@ -307,8 +407,8 @@ export class ScoreDrawer {
 		this.config.scoreData = this.scoreData.notes;
 		this.config.laneWidth = this.laneWidth;
 		this.config.noteWidth = this.laneWidth*0.8;
-		this.config.barHeight = this.canvas.height*0.05; // これでいいのか？
-		this.config.lengthToBar = this.canvas.height*0.8; // これでいいのか？上から判定ラインまでの長さ
+		this.config.barHeight = this.canvas.height*0.025; // これでいいのか？
+		this.config.lengthToBar = this.canvas.height*0.95; // これでいいのか？上から判定ラインまでの長さ
 		this.config.noteHeight = this.canvas.height*0.1;
 		this.config.numberOfLanes = this.numberOfLanes;
 
@@ -342,24 +442,24 @@ export class ScoreDrawer {
 		this.judgeSystem = new JudgeSystem(this.canvas, this.audioCtx,this.config,this.noteManager);
 
 		this.conductor.play();
+		
+		// ここから、ノーツ以外のUI
+		this.hbar = new Hbar(this.canvas,this.audioCtx,this.config);
+
+		this.log = document.querySelector("#debugLog");
+		debugLog = this.log;
 
 
 	}
 
 	update(){
-		const currentTime = this.conductor.getCurrentTime();
-		
 		const ctx = this.canvasCtx;
-		const width = this.canvas.width;
-		const height = this.canvas.height;
 
-		const notes = this.scoreData.notes;
-		const noteState = this.noteState;
-
-		ctx.fillstyle = "black";
+		ctx.fillStyle = "black";
 		ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
 		this.noteManager.update();
+		this.hbar.update();
 		
 	}  // end update()
 

@@ -9,7 +9,7 @@ export class InputManager{
 			}
 			const ev = new CustomEvent("input",{
 				detail: {
-					"index": index
+					"index": index-1
 				}
 			});
 

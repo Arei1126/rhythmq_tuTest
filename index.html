@@ -9,7 +9,21 @@
 	<body>
 		<link type="text/css" rel="stylesheet" href="./resources/css/css.css">
 		<script type="module" src="./resources/scripts/script.js"></script>
-		<p>ここをクリック</p>
+		<p style="color: red; font-size: xx-large;">どこかをクリックしてスタート</p>
+		<p> 左のレーンがキーボードの1キー、右のレーンがキーボードの2キーに対応</p>
+		<div class="game-viewport">
+			<div class="perspective-wrapper">
+				<canvas id="scoreCanvas"></canvas>
+			</div>
+
+			<canvas id="uiCanvas2d"></canvas>
+
+			<div class="html-ui-layer">
+				<div class="score">UI要素をここに</div>
+				<div id="debugLog"></div>
+			</div>
+		</div>
+
 		<canvas id="scoreCanvas"></canvas>
 
 	</body>

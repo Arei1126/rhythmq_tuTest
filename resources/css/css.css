@@ -1,4 +1,61 @@
 body{
 }
 
+/* 画面全体のサイズと位置決め */
+.game-viewport {
+  position: relative;
+  width: 1024px;  /* ゲームの横幅 */
+  height: 1024px; /* ゲームの縦幅 */
+  background-color: gray;
+  overflow: hidden;
+}
 
+/* 3Dパースを適用するラッパー */
+.perspective-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 視点の設定：ここが3Dの肝！ */
+  perspective: 500px;
+  perspective-origin: 50% 100%; /* 判定ライン（下端）を消失点の基準にする */
+}
+
+/* 3D Canvas本体 */
+#scoreCanvas {
+  width: 100%;
+  height: 100%;
+  /* 45度奥に倒してパースを完成させる */
+  transform: rotateX(8deg) translateY(-15%);;
+  transform-origin: bottom;
+}
+
+/* UIレイヤー：3D Canvasの真上に重ねる */
+#uiCanvas2d, .html-ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 下の3Dレイヤーをクリックできるように、透明な部分はスルーさせる */
+  pointer-events: none;
+  background: transparent;
+}
+
+/* スコア表示などのデコレーション */
+.score {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: #00f2ff;
+  font-family: sans-serif;
+  font-weight: bold;
+}
+
+#debugLog {
+  color: #00f2ff;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: large;
+}
