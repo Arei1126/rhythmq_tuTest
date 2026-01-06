@@ -81,11 +81,30 @@ class Conductor {
         this.startTime = 0;
         this.offset = 0; // ユーザー設定のズレ調整
         this.isPlaying = false;
+	this.music = document.createElement("audio");
+	this.music.src = "./resources/assets/parappa-tutest.ogg";
+	this.music.display = "none";
+	    document.body.appendChild(this.music);
+	    this.source = this.audioCtx.createMediaElementSource(this.music);
+	    this.gainNode = this.audioCtx.createGain();
+	    this.gainNode.gain.value = 1.0;
+	    this.source.connect(this.gainNode).connect(this.audioCtx.destination);
+
     }
 
     play() {
+
+
+
         this.startTime = this.audioCtx.currentTime;
         this.isPlaying = true;
+
+	    if (this.audioCtx.state === 'suspended') {
+		    this.audioCtx.resume();
+	    }
+	this.music.currentTime = 0;
+	this.music.play();
+	
         // ...source.start() とか
     }
 
@@ -368,8 +387,8 @@ const HEIGHT = 3240;
 */
 const SLIDER_HEIGHT = 3240/5
 const Config = {
-		"timeAdvance": 2.5,
-		"threshods": [0.05,0.15,0.45], // good, bad, input, +-である[0.05,0.1,0.15]
+		"timeAdvance": 5,
+		"threshods": [0.05,0.35,0.45], // good, bad, input, +-である[0.05,0.1,0.15]
 	}
 
 const NA = -1;
