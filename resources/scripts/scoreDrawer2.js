@@ -2,7 +2,7 @@
 const PINK = "#ff0055";
 let debugLog = null;
 
-function drawCenteredText(ctx, text, x, y, color = '#000', font = '16px sans-serif') {
+function drawCenteredText(ctx, text, x, y, color = '#000', font = 'bold 32px sans-serif') {
     // 1. 現在の描画状態（色や配置設定など）を保存する
     // これにより、この関数内での変更が外部に影響しないようにする
     ctx.save();
@@ -214,13 +214,18 @@ class NoteObject  {
 		const ctx = this.canvas.getContext("2d");
 
 		
-		const fontSize = this.config.noteWidth / (text.length*1.5);
-		ctx.font = `${fontSize}px sans-serif`;
+		const fontSize = this.config.noteWidth / (text.length*0.9);
+		ctx.font = `bold ${fontSize}px sans-serif`;
+		// 文字間隔を2pxせばめる
+		ctx.letterSpacing = "-7px";
+		//ctx.font = `bold ${fontSize}px GN-Kin-iro_SansSerif`;
 
 		// 3. 塗りつぶしの色を設定
 		ctx.fillStyle = '#ff0055'; // 鮮やかなピンク
 		
-		const x = this.canvas.width/(this.config.numberOfLanes+1) * (this.noteData.lane + 1)
+		const x = this.config.laneWidth * (this.noteData.lane + 0.5);
+		//const x = this.canvas.width/(this.config.numberOfLanes+1) * (this.noteData.lane + 1)
+		
 		//drawCenteredRect(ctx,x , y, this.config.noteWidth, this.config.noteHeight);
 		drawCenteredRoundRect(ctx,x , y, this.config.noteWidth, this.config.noteHeight,"white", PINK,PINK,true);
 
@@ -388,7 +393,7 @@ const HEIGHT = 3240;
 const SLIDER_HEIGHT = 3240/5
 const Config = {
 		"timeAdvance": 5,
-		"threshods": [0.05,0.35,0.45], // good, bad, input, +-である[0.05,0.1,0.15]
+		"threshods": [0.1,0.35,0.45], // good, bad, input, +-である[0.05,0.1,0.15]
 	}
 
 const NA = -1;
