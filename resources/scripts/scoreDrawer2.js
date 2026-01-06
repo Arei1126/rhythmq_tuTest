@@ -217,7 +217,7 @@ class NoteObject  {
 		const fontSize = this.config.noteWidth / (text.length*0.9);
 		ctx.font = `bold ${fontSize}px sans-serif`;
 		// 文字間隔を2pxせばめる
-		ctx.letterSpacing = "-7px";
+		ctx.letterSpacing = "-5px";
 		//ctx.font = `bold ${fontSize}px GN-Kin-iro_SansSerif`;
 
 		// 3. 塗りつぶしの色を設定
@@ -246,8 +246,8 @@ class LaneEffect {
 		this.audioctx = audioctx;
 
 		this.active = false;
-		this.timer = 200;  //ms
-		this.mode = false;
+		this.duration = 200;  //ms
+		this.startTime = 0;
 
 	    	this.conductor = this.config.conductor;
 	};
@@ -294,7 +294,61 @@ class Hbar {
 		this.effect = new HbarEffect(canvas,audioctx,config);
 
 	    	this.conductor = this.config.conductor;
+
+		// --- 追加: 各レーンの光る強さを管理 (0.0 ～ 1.0) ---
+		// 配列で管理することで、複数のレーンが同時に光っても大丈夫なようにするよ！
+		this.laneGlows = new Array(this.config.numberOfLanes).fill(0);
+		this.glowDuration = 0.2; // 光る長さ（秒）。0.2秒くらいがキレが良くてオススメ！
 	}
+
+
+	// --- 追加: 指定したレーンを光らせるトリガー ---
+	activateGlow(laneIndex) {
+		if (laneIndex >= 0 && laneIndex < this.laneGlows.length) {
+			this.laneGlows[laneIndex] = 1.0; // 不透明度MAXでスタート！
+		}
+	}
+
+	update() {
+		const ctx = this.canvas.getContext("2d");
+		const deltaTime = 1/60; // 簡易的に1フレーム分（本当は前回の描画との差分をとるのがベター）
+
+		// 1. 通常の判定バー（土台）の描画
+		ctx.save();
+		ctx.fillStyle = "yellow";
+		ctx.shadowBlur = 10;
+		ctx.shadowColor = "yellow";
+		// 全体の横線
+		drawCenteredRect(ctx, 1/2*this.canvas.width, this.config.lengthToBar, this.canvas.width, this.config.barHeight, true);
+		ctx.restore();
+
+		// 2. 入力があったレーンの「光り」を描画
+		for (let i = 0; i < this.laneGlows.length; i++) {
+			if (this.laneGlows[i] > 0) {
+				ctx.save();
+
+				// 光の強さに応じて色や透明度を変える
+				// ここでは白に近い黄色で「光ってる感」を出すよ！
+				ctx.fillStyle = `rgba(255, 255, 200, ${this.laneGlows[i]})`;
+				ctx.shadowBlur = 30 * this.laneGlows[i]; // 残り時間に合わせてボカシも弱くする
+				ctx.shadowColor = "white";
+
+				const x = this.config.laneWidth * (i + 0.5);
+				const w = this.config.laneWidth;
+				const h = this.config.barHeight * 2; // 少し太めにすると目立ってアゲ！
+
+				// 該当レーンの場所だけ描画
+				drawCenteredRect(ctx, x, this.config.lengthToBar, w, h, true);
+
+				ctx.restore();
+
+				// タイマーを減らす。徐々に消えていく（フェードアウト）演出になるよ
+				this.laneGlows[i] -= deltaTime / this.glowDuration;
+			}
+		}
+	}
+
+	/*
 	update(){
 		const ctx = this.canvas.getContext("2d");
 		ctx.save();
@@ -305,6 +359,7 @@ class Hbar {
 		drawCenteredRect(ctx, 1/2*this.canvas.width, this.config.lengthToBar, this.canvas.width,this.config.barHeight,true);
 		ctx.restore();
 	}
+	*/
 }
 
 class NoteManager {
@@ -393,7 +448,7 @@ const HEIGHT = 3240;
 const SLIDER_HEIGHT = 3240/5
 const Config = {
 		"timeAdvance": 5,
-		"threshods": [0.1,0.35,0.45], // good, bad, input, +-である[0.05,0.1,0.15]
+		"threshods": [0.2,0.35,0.45], // good, bad, input, +-である[0.05,0.1,0.15]
 	}
 
 const NA = -1;
@@ -481,6 +536,26 @@ export class ScoreDrawer {
 
 		ctx.fillStyle = "black";
 		ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+		
+		// --- 2. レーン境界線の描画ロジックを追加 ---
+		// ネオンっぽく光らせるなら、少し透明度を入れたりシャドウを使ったりするのもアリ！
+		ctx.strokeStyle = "rgba(0, 255, 0, 0.5)"; // 透明度50%の緑
+		ctx.lineWidth = 2;                        // 線の太さ
+
+		ctx.shadowBlur = 10;
+		ctx.shadowColor = "rgba(0, 255, 0, 0.5)";
+		for (let i = 1; i < this.numberOfLanes; i++) {
+			// 各レーンの右側の境界線を計算
+			const x = i * this.laneWidth; 
+			
+			ctx.beginPath();
+			ctx.moveTo(x, 0);                 // キャンバスの最上部から
+			ctx.lineTo(x, this.canvas.height); // 最下部まで
+			ctx.stroke();
+		}
+		// ------------------------------------------
+
+
 
 		this.noteManager.update();
 		this.hbar.update();
@@ -489,6 +564,11 @@ export class ScoreDrawer {
 
 	input(index){
 		this.judgeSystem.handleInput(index);
+		// --- 追加: 判定バーのエフェクトを起動 ---
+		// indexはレーン番号なので、そのまま渡せばOK！
+		if (this.hbar) {
+			this.hbar.activateGlow(index);
+		}
 	}
 
 
